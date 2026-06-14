@@ -34,14 +34,23 @@ export default function Admin() {
 
   useEffect(() => {
     fetchData();
-    
+
     const channel = supabase
       .channel('admin_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => fetchData())
       .subscribe();
-      
-    return () => { 
-      supabase.removeChannel(channel); 
+
+    // Auto-recuperación al volver a la pestaña, por si una carga quedó a medias.
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') fetchData();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
+
+    return () => {
+      supabase.removeChannel(channel);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onVisible);
     };
   }, []);
 

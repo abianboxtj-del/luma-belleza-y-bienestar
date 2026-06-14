@@ -61,12 +61,65 @@ export default function Navbar() {
           </div>
 
           <div className="md:hidden flex items-center">
-            <button onClick={() => setIsOpen(!isOpen)} className="text-water-700">
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="text-water-700"
+              aria-label="Abrir menú"
+              aria-expanded={isOpen}
+            >
               {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
       </div>
+
+      {/* Menú móvil desplegable */}
+      {isOpen && (
+        <div className="md:hidden border-t border-water-100 bg-white/95 backdrop-blur-md">
+          <div className="px-4 py-4 flex flex-col space-y-1">
+            {!isAdminPath && navLinks.map((link) => (
+              <a
+                key={link.name}
+                href={link.href}
+                onClick={() => setIsOpen(false)}
+                className="px-3 py-3 rounded-xl text-base font-medium text-water-700 hover:bg-water-50 hover:text-water-900 transition-colors"
+              >
+                {link.name}
+              </a>
+            ))}
+
+            {isAdmin && (
+              <Link
+                to="/admin"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center space-x-2 px-3 py-3 rounded-xl text-base font-medium text-water-700 hover:bg-water-50 hover:text-water-900 transition-colors"
+              >
+                <Settings className="w-5 h-5" />
+                <span>Admin</span>
+              </Link>
+            )}
+
+            {session ? (
+              <button
+                onClick={() => { setIsOpen(false); signOut(); }}
+                className="flex items-center space-x-2 px-3 py-3 rounded-xl text-base font-medium text-water-700 hover:bg-water-50 hover:text-water-900 transition-colors text-left"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>Salir</span>
+              </button>
+            ) : (
+              <Link
+                to="/login"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center space-x-2 px-3 py-3 rounded-xl text-base font-medium text-water-700 hover:bg-water-50 hover:text-water-900 transition-colors"
+              >
+                <User className="w-5 h-5" />
+                <span>Ingresar</span>
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

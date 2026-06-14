@@ -23,7 +23,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
+    // Red de seguridad: si por lo que sea una consulta queda colgada,
+    // nunca dejamos la app atascada en el spinner para siempre.
+    const safety = setTimeout(() => {
+      if (mounted) setLoading(false);
+    }, 8000);
+
+    // Carga inicial de la sesión (lectura local, no dispara el lock).
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -33,26 +43,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    // IMPORTANTE: el callback NO debe ser async ni await-ear consultas a la DB.
+    // Supabase serializa las operaciones de auth tras un lock interno; consultar
+    // la DB dentro del callback (que ya tiene el lock tomado) lo bloquea para
+    // siempre y cuelga toda la app. Por eso diferimos fetchProfile con setTimeout,
+    // que lo ejecuta fuera del callback, una vez liberado el lock.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        await fetchProfile(session.user.id);
+        const userId = session.user.id;
+        setTimeout(() => {
+          if (mounted) fetchProfile(userId);
+        }, 0);
       } else {
         setProfile(null);
         setLoading(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      clearTimeout(safety);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchProfile = async (userId: string) => {
+    // Cortamos la consulta si tarda demasiado, para no colgar el spinner.
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
+        .abortSignal(controller.signal)
         .maybeSingle();
 
       if (error) {
@@ -65,6 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Error in fetchProfile:', error);
       setProfile(null);
     } finally {
+      clearTimeout(timeout);
       setLoading(false);
     }
   };

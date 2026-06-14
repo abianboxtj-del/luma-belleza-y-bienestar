@@ -52,6 +52,19 @@ export default function Home() {
 
   useEffect(() => {
     fetchData();
+
+    // Auto-recuperación: al volver a la pestaña, recargamos los datos por si
+    // una consulta anterior falló o quedó vacía (en vez de tener que recargar
+    // la página a mano).
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') fetchData();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onVisible);
+    };
   }, []);
 
   const fetchData = async () => {
