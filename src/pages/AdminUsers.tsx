@@ -177,13 +177,28 @@ export default function AdminUsers() {
                   </div>
                   <div className="space-y-2">
                     <Label>Contraseña (mín. 6 carac.)</Label>
-                    <Input 
-                      type="password" 
-                      value={formData.password} 
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })} 
-                      required 
-                      minLength={6} 
+                    <Input
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      required
+                      minLength={6}
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Rol</Label>
+                    <Select
+                      value={formData.role}
+                      onValueChange={(value) => setFormData({ ...formData, role: value as UserRole })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Administrador (solo agenda)</SelectItem>
+                        <SelectItem value="owner">Dueño (gestión total)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <Button type="submit" className="w-full btn-primary" disabled={isSubmitting}>
                     {isSubmitting ? 'Creando...' : 'Crear Usuario'}
@@ -198,7 +213,7 @@ export default function AdminUsers() {
           {users.map((u) => (
             <div key={u.id} className="bg-white p-6 rounded-3xl border border-water-100 shadow-sm hover:shadow-md transition-all">
               <div className="flex justify-between mb-4">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${u.email === 'nahuelvalquinta2@gmail.com' ? 'bg-water-900 text-white' : 'bg-water-50 text-water-600'}`}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${u.role === 'owner' ? 'bg-water-900 text-white' : 'bg-water-50 text-water-600'}`}>
                   <User className="w-5 h-5" />
                 </div>
                 <Button 
@@ -212,8 +227,8 @@ export default function AdminUsers() {
               </div>
               <h3 className="font-serif text-lg text-water-900">{u.first_name} {u.last_name}</h3>
               <p className="text-stone-500 text-sm mb-4">{u.email}</p>
-              <Badge className={u.email === 'nahuelvalquinta2@gmail.com' ? 'bg-water-900 text-white' : 'bg-water-100 text-water-700 border-none'}>
-                {u.email === 'nahuelvalquinta2@gmail.com' ? 'Dueño' : 'Administrador'}
+              <Badge className={u.role === 'owner' ? 'bg-water-900 text-white' : 'bg-water-100 text-water-700 border-none'}>
+                {u.role === 'owner' ? 'Dueño' : 'Administrador'}
               </Badge>
             </div>
           ))}

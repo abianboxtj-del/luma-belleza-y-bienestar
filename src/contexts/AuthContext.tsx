@@ -73,11 +73,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
   };
 
-  // nahuelvalquinta2@gmail.com siempre es Owner
-  const isOwner = user?.email === 'nahuelvalquinta2@gmail.com' || profile?.role === 'admin';
-  // En este esquema, cualquier 'admin' tiene acceso al panel
-  const isEmployee = profile?.role === 'admin' && user?.email !== 'nahuelvalquinta2@gmail.com';
-  const isAdmin = isOwner || profile?.role === 'admin';
+  // Dueño = rol 'owner'. Mantenemos el email principal como bootstrap por si su
+  // fila aún no se migró a 'owner', para no quedar sin ningún dueño.
+  const isOwner = profile?.role === 'owner' || user?.email === 'nahuelvalquinta2@gmail.com';
+  // Empleado = 'admin': accede al panel pero solo a la agenda.
+  const isEmployee = profile?.role === 'admin';
+  // Cualquiera de los dos tiene acceso al panel de administración.
+  const isAdmin = isOwner || isEmployee;
 
   return (
     <AuthContext.Provider value={{ user, profile, session, loading, isOwner, isEmployee, isAdmin, signOut }}>

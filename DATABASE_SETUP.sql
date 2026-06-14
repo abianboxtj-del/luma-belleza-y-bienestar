@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   email TEXT,
   first_name TEXT,
   last_name TEXT,
-  role TEXT DEFAULT 'client' CHECK (role IN ('admin', 'client')),
+  role TEXT DEFAULT 'client' CHECK (role IN ('owner', 'admin', 'client')),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   PRIMARY KEY (id)
 );
@@ -71,19 +71,19 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 -- Políticas de acceso
 CREATE POLICY "Lectura pública categorías" ON public.categories FOR SELECT USING (true);
-CREATE POLICY "Admin total categorías" ON public.categories FOR ALL TO authenticated USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Admin total categorías" ON public.categories FOR ALL TO authenticated USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('owner', 'admin')));
 
 CREATE POLICY "Lectura pública servicios" ON public.services FOR SELECT USING (true);
-CREATE POLICY "Admin total servicios" ON public.services FOR ALL TO authenticated USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Admin total servicios" ON public.services FOR ALL TO authenticated USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('owner', 'admin')));
 
 CREATE POLICY "Lectura pública profesionales" ON public.professionals FOR SELECT USING (true);
-CREATE POLICY "Admin total profesionales" ON public.professionals FOR ALL TO authenticated USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Admin total profesionales" ON public.professionals FOR ALL TO authenticated USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('owner', 'admin')));
 
 CREATE POLICY "Inserción pública turnos" ON public.appointments FOR INSERT WITH CHECK (true);
-CREATE POLICY "Admin total turnos" ON public.appointments FOR ALL TO authenticated USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Admin total turnos" ON public.appointments FOR ALL TO authenticated USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('owner', 'admin')));
 
 CREATE POLICY "Lectura pública promociones" ON public.promotions FOR SELECT USING (true);
-CREATE POLICY "Admin total promociones" ON public.promotions FOR ALL TO authenticated USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Admin total promociones" ON public.promotions FOR ALL TO authenticated USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('owner', 'admin')));
 
 CREATE POLICY "Usuarios ven su propio perfil" ON public.profiles FOR SELECT TO authenticated USING (auth.uid() = id);
 CREATE POLICY "Usuarios actualizan su propio perfil" ON public.profiles FOR UPDATE TO authenticated USING (auth.uid() = id);
@@ -95,14 +95,20 @@ LANGUAGE PLPGSQL
 SECURITY DEFINER SET search_path = ''
 AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, role)
+  INSERT INTO public.profiles (id, email, role, first_name, last_name)
   VALUES (
     new.id,
     new.email,
-    CASE 
-      WHEN new.email = 'nahuelvalquinta2@gmail.com' THEN 'admin'
+    CASE
+      -- El email principal siempre es dueño (bootstrap).
+      WHEN new.email = 'nahuelvalquinta2@gmail.com' THEN 'owner'
+      -- Respetamos el rol que envía la edge function create-user.
+      WHEN new.raw_user_meta_data->>'role' IN ('owner', 'admin', 'client')
+        THEN new.raw_user_meta_data->>'role'
       ELSE 'client'
-    END
+    END,
+    new.raw_user_meta_data->>'first_name',
+    new.raw_user_meta_data->>'last_name'
   );
   RETURN new;
 END;

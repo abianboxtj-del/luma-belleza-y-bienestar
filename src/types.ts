@@ -47,8 +47,9 @@ export interface Promotion {
   active: boolean;
 }
 
-// Ajustamos a los roles que acepta la DB por defecto
-export type UserRole = "admin" | "client";
+// Roles que acepta la DB. 'owner' (dueño) = gestión total; 'admin' = empleado
+// con acceso a la agenda; 'client' = cliente final.
+export type UserRole = "owner" | "admin" | "client";
 
 export interface UserProfile {
   id: string;
