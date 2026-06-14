@@ -1,0 +1,103 @@
+{
+  "entities": {
+    "Category": {
+      "title": "Category",
+      "description": "A category for services",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["name"]
+    },
+    "Service": {
+      "title": "Service",
+      "description": "A beauty or wellness service offered by Lumá",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "category": { "type": "string", "enum": ["Pestañas y cejas", "Uñas", "Masajes y bienestar", "Cosmetología", "Podología", "Tratamientos corporales"] },
+        "duration": { "type": "number", "description": "Duration in minutes" },
+        "price": { "type": "number" },
+        "description": { "type": "string" }
+      },
+      "required": ["name", "category", "duration"]
+    },
+    "Professional": {
+      "title": "Professional",
+      "description": "A staff member at Lumá",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "specialties": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["name"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "A booking made by a client",
+      "type": "object",
+      "properties": {
+        "serviceId": { "type": "string" },
+        "professionalId": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "time": { "type": "string" },
+        "clientName": { "type": "string" },
+        "clientEmail": { "type": "string" },
+        "clientPhone": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "cancelled"] },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["serviceId", "date", "time", "clientName", "clientPhone", "status"]
+    },
+    "Promotion": {
+      "title": "Promotion",
+      "description": "Special offers",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "discount": { "type": "string" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["title", "active"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile for admin access",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "client"] }
+      },
+      "required": ["email", "role"]
+    }
+  },
+  "firestore": {
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Collection of service categories"
+    },
+    "/services/{serviceId}": {
+      "schema": "Service",
+      "description": "Collection of services"
+    },
+    "/professionals/{professionalId}": {
+      "schema": "Professional",
+      "description": "Collection of professionals"
+    },
+    "/appointments/{appointmentId}": {
+      "schema": "Appointment",
+      "description": "Collection of appointments"
+    },
+    "/promotions/{promotionId}": {
+      "schema": "Promotion",
+      "description": "Collection of promotions"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    }
+  }
+}

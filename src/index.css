@@ -1,0 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Cormorant Garamond", serif;
+  
+  --color-water-50: #f0f9fa;
+  --color-water-100: #e0f7fa;
+  --color-water-200: #b2ebf2;
+  --color-water-500: #00bcd4;
+  --color-water-600: #00acc1;
+  --color-water-900: #006064;
+  
+  --color-stone-900: #1a1a1a;
+  
+  --radius-3xl: 2rem;
+  --radius-4xl: 2.5rem;
+}
+
+@layer base {
+  body {
+    @apply bg-water-50 text-stone-900 font-sans antialiased;
+    background-attachment: fixed;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+  }
+}
+
+.glass-card {
+  @apply bg-white/70 backdrop-blur-lg border border-white/40 shadow-sm;
+}
+
+.btn-primary {
+  @apply bg-water-900 text-white px-6 py-3 rounded-full font-medium transition-all hover:bg-water-600 active:scale-95 disabled:opacity-50 shadow-md hover:shadow-lg;
+}
+
+.btn-secondary {
+  @apply bg-white text-water-900 border border-water-100 px-6 py-3 rounded-full font-medium transition-all hover:bg-water-50 active:scale-95 disabled:opacity-50;
+}
+
+.wave-bg {
+  background: 
+    radial-gradient(circle at 0% 0%, var(--color-water-100) 0%, transparent 50%),
+    radial-gradient(circle at 100% 100%, var(--color-water-200) 0%, transparent 50%);
+}
+
+/* Animación de burbujas mejorada para visibilidad constante */
+@keyframes float {
+  0% { transform: translateY(0px) translateX(0px); opacity: 0.2; }
+  50% { opacity: 0.8; transform: translateY(-50px) translateX(10px); }
+  100% { transform: translateY(-100px) translateX(20px); opacity: 0.2; }
+}
+
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: float 10s infinite ease-in-out;
+  aspect-ratio: 1 / 1; /* Asegura círculo perfecto */
+}
