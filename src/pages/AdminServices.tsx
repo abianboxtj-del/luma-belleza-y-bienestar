@@ -62,13 +62,22 @@ export default function AdminServices() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const loadingToast = toast.loading('Guardando servicio...');
+    // Solo enviamos columnas reales de la tabla; descartamos campos derivados
+    // del join (categories, category_name) que no existen en `services`.
+    const payload = {
+      name: formData.name,
+      category_id: formData.category_id,
+      duration: formData.duration,
+      price: formData.price,
+      description: formData.description,
+    };
     try {
       if (editingService) {
-        const { error } = await supabase.from('services').update(formData).eq('id', editingService.id);
+        const { error } = await supabase.from('services').update(payload).eq('id', editingService.id);
         if (error) throw error;
         toast.success('Servicio actualizado', { id: loadingToast });
       } else {
-        const { error } = await supabase.from('services').insert(formData);
+        const { error } = await supabase.from('services').insert(payload);
         if (error) throw error;
         toast.success('Servicio creado', { id: loadingToast });
       }
