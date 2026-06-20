@@ -6,7 +6,9 @@ import {
   XCircle,
   ChevronLeft,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  User,
+  Gift
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Appointment } from '@/types';
@@ -43,8 +45,8 @@ export default function AdminAppointments() {
   const fetchAppointments = async () => {
     const { data, error } = await supabase
       .from('appointments')
-      .select('*, services(name), professionals(name)');
-    
+      .select('*, services(name), professionals(name), promotions(title)');
+
     if (error) {
       toast.error('Error al cargar turnos');
       return;
@@ -53,7 +55,8 @@ export default function AdminAppointments() {
     setAppointments(data.map(a => ({
       ...a,
       service_name: (a as any).services?.name,
-      professional_name: (a as any).professionals?.name
+      professional_name: (a as any).professionals?.name,
+      promotion_title: (a as any).promotions?.title
     })));
   };
 
@@ -145,6 +148,15 @@ export default function AdminAppointments() {
                       <span className="flex items-center gap-2.5"><Phone className="w-4 h-4 text-water-400" /> {app.client_phone}</span>
                       {app.professional_name && (
                         <span className="flex items-center gap-2.5"><User className="w-4 h-4 text-water-400" /> {app.professional_name}</span>
+                      )}
+                      {app.final_price != null && (
+                        <span className="flex items-center gap-2.5 font-medium text-water-700">
+                          ${app.final_price}
+                          {app.discount_amount ? <span className="text-stone-400 line-through">${app.original_price}</span> : null}
+                        </span>
+                      )}
+                      {app.promotion_title && (
+                        <span className="flex items-center gap-2.5 text-water-600"><Gift className="w-4 h-4 text-water-400" /> {app.promotion_title}</span>
                       )}
                     </div>
                   </div>

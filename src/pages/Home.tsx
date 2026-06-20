@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { Service, Appointment, Promotion, Category, Professional } from '@/types';
+import { bestPromoForService, formatPromoLabel } from '@/lib/pricing';
 import toast from 'react-hot-toast';
 
 export default function Home() {
@@ -72,7 +73,7 @@ export default function Home() {
       const [cats, servs, promos, profs, apps] = await Promise.all([
         supabase.from('categories').select('*').order('order'),
         supabase.from('services').select('*'),
-        supabase.from('promotions').select('*').eq('active', true),
+        supabase.from('promotions').select('*, promotion_services(service_id)').eq('active', true),
         supabase.from('professionals').select('*'),
         supabase.from('appointments').select('*').eq('status', 'approved')
       ]);
@@ -82,7 +83,10 @@ export default function Home() {
         if (cats.data.length > 0 && !selectedCategory) setSelectedCategory(cats.data[0].id);
       }
       if (servs.data) setServices(servs.data);
-      if (promos.data) setPromotions(promos.data);
+      if (promos.data) setPromotions(promos.data.map(p => ({
+        ...p,
+        service_ids: ((p as any).promotion_services ?? []).map((r: any) => r.service_id)
+      })));
       if (profs.data) setProfessionals(profs.data);
       if (apps.data) setAppointments(apps.data);
     } catch (error) {
@@ -99,6 +103,12 @@ export default function Home() {
 
     const loadingToast = toast.loading('Procesando reserva...');
 
+    // Congelamos el precio aplicado al momento de reservar. Si hay promo, se
+    // guardan los tres montos; si no, original = final = precio del servicio.
+    const service = services.find(s => s.id === bookingData.service_id);
+    const promo = bestPromoForService(promotions, service);
+    const basePrice = service?.price ?? null;
+
     try {
       const { error } = await supabase.from('appointments').insert({
         service_id: bookingData.service_id,
@@ -108,7 +118,11 @@ export default function Home() {
         client_name: bookingData.client_name,
         client_phone: bookingData.client_phone,
         notes: bookingData.notes,
-        status: 'pending'
+        status: 'pending',
+        promotion_id: promo?.promotion.id ?? null,
+        original_price: promo?.originalPrice ?? basePrice,
+        discount_amount: promo?.discountAmount ?? null,
+        final_price: promo?.finalPrice ?? basePrice
       });
 
       if (error) throw error;
@@ -125,9 +139,29 @@ export default function Home() {
   const bookingServices = services.filter(s => s.category_id === bookingData.category_id);
   const selectedCategoryName = categories.find(c => c.id === selectedCategory)?.name;
   
-  const professionalsOfCategory = professionals.filter(p => 
+  const professionalsOfCategory = professionals.filter(p =>
     p.specialties.includes(selectedCategoryName || '')
   );
+
+  // Promo que se aplica al servicio elegido en la reserva (la de mayor descuento).
+  const selectedBookingService = services.find(s => s.id === bookingData.service_id);
+  const appliedPromo = bestPromoForService(promotions, selectedBookingService);
+
+  // "Quiero esta promo": baja al formulario y precarga el servicio. Si la promo
+  // cubre uno solo, lo deja elegido; si cubre varios, deja la categoría lista.
+  const applyPromo = (promo: Promotion) => {
+    const ids = promo.service_ids ?? [];
+    const firstService = ids.length > 0 ? services.find(s => s.id === ids[0]) : undefined;
+    if (firstService) {
+      setBookingData(prev => ({
+        ...prev,
+        category_id: firstService.category_id,
+        service_id: ids.length === 1 ? firstService.id : ''
+      }));
+    }
+    setBookingStep(1);
+    document.getElementById('turnos')?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   const getCategoryName = (id: string) => categories.find(c => c.id === id)?.name || "Selecciona categoría";
   const getServiceName = (id: string) => services.find(s => s.id === id)?.name || "Selecciona servicio";
@@ -451,8 +485,36 @@ export default function Home() {
                             </SelectContent>
                           </Select>
                         </div>
-                        <Button 
-                          onClick={() => setBookingStep(2)} 
+                        {selectedBookingService?.price != null && (
+                          <div className="rounded-2xl border border-water-100 bg-water-50/60 p-5 space-y-2">
+                            {appliedPromo ? (
+                              <>
+                                <div className="flex items-center justify-between text-sm text-stone-500">
+                                  <span>Precio</span>
+                                  <span className="line-through">${appliedPromo.originalPrice}</span>
+                                </div>
+                                <div className="flex items-center justify-between text-sm text-water-700 font-medium">
+                                  <span className="flex items-center gap-2">
+                                    <Sparkles className="w-4 h-4 text-water-500" />
+                                    {appliedPromo.promotion.title} ({formatPromoLabel(appliedPromo.promotion.discount_type, appliedPromo.promotion.discount_value)})
+                                  </span>
+                                  <span>− ${appliedPromo.discountAmount}</span>
+                                </div>
+                                <div className="flex items-center justify-between pt-2 border-t border-water-100">
+                                  <span className="font-serif text-water-900">Total con promo</span>
+                                  <span className="font-serif text-2xl text-water-900">${appliedPromo.finalPrice}</span>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="flex items-center justify-between">
+                                <span className="font-serif text-water-900">Total</span>
+                                <span className="font-serif text-2xl text-water-900">${selectedBookingService.price}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        <Button
+                          onClick={() => setBookingStep(2)}
                           className="w-full btn-primary h-14 text-lg shadow-xl"
                           disabled={!date || !bookingData.service_id || !bookingData.time}
                         >
@@ -544,10 +606,27 @@ export default function Home() {
                   <span className="text-lg">{promo.discount}</span>
                 </div>
                 <h3 className="text-3xl font-serif mb-6">{promo.title}</h3>
-                <p className="text-water-100 text-lg mb-10 leading-relaxed">{promo.description}</p>
-                <a href="#turnos" className="text-white font-bold text-sm flex items-center gap-3 hover:gap-5 transition-all">
+                <p className="text-water-100 text-lg mb-6 leading-relaxed">{promo.description}</p>
+                {(promo.service_ids ?? []).length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-8">
+                    {(promo.service_ids ?? []).map(id => {
+                      const svc = services.find(s => s.id === id);
+                      if (!svc) return null;
+                      return (
+                        <span key={id} className="text-xs bg-white/15 border border-white/20 px-3 py-1 rounded-full">
+                          {svc.name}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => applyPromo(promo)}
+                  className="text-white font-bold text-sm flex items-center gap-3 hover:gap-5 transition-all"
+                >
                   Quiero esta promo <ChevronRight className="w-5 h-5" />
-                </a>
+                </button>
               </div>
             ))}
           </div>

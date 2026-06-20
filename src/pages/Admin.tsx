@@ -7,6 +7,7 @@ import {
   CheckCircle, 
   ChevronRight,
   Tag,
+  Gift,
   User,
   Users
 } from 'lucide-react';
@@ -57,7 +58,7 @@ export default function Admin() {
   const fetchData = async () => {
     try {
       const [apps, servs, profs] = await Promise.all([
-        supabase.from('appointments').select('*, services(name)').order('time', { ascending: true }),
+        supabase.from('appointments').select('*, services(name), promotions(title)').order('time', { ascending: true }),
         supabase.from('services').select('*'),
         supabase.from('professionals').select('*')
       ]);
@@ -65,7 +66,8 @@ export default function Admin() {
       if (apps.data) {
         setAppointments(apps.data.map(a => ({
           ...a,
-          service_name: (a as any).services?.name
+          service_name: (a as any).services?.name,
+          promotion_title: (a as any).promotions?.title
         })));
       }
       if (servs.data) setServices(servs.data);
@@ -178,7 +180,20 @@ export default function Admin() {
                           <span className="flex items-center gap-1"><Sparkles className="w-4 h-4 text-water-400" /> {app.service_name}</span>
                           <span className="flex items-center gap-1"><Calendar className="w-4 h-4 text-water-400" /> {format(new Date(app.date + 'T12:00:00'), "d 'de' MMMM", { locale: es })}</span>
                           <span className="flex items-center gap-1"><Clock className="w-4 h-4 text-water-400" /> {app.time} hs</span>
+                          {app.final_price != null && (
+                            <span className="flex items-center gap-1 font-medium text-water-700">
+                              ${app.final_price}
+                              {app.discount_amount ? <span className="text-stone-400 line-through ml-1">${app.original_price}</span> : null}
+                            </span>
+                          )}
                         </div>
+                        {app.promotion_title && (
+                          <div className="mt-2">
+                            <Badge className="bg-water-50 text-water-700 border-water-100 gap-1">
+                              <Gift className="w-3 h-3" /> {app.promotion_title}
+                            </Badge>
+                          </div>
+                        )}
                       </div>
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" className="rounded-full text-red-600 border-red-100 hover:bg-red-50" onClick={() => handleStatusUpdate(app.id, 'cancelled')}>Rechazar</Button>
@@ -249,6 +264,13 @@ export default function Admin() {
                     <div className="flex items-center gap-4">
                       <div className="bg-water-50 p-3 rounded-2xl group-hover:bg-water-900 group-hover:text-white transition-colors"><Tag className="w-5 h-5" /></div>
                       <span className="font-medium text-water-900">Categorías</span>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-water-200" />
+                  </Link>
+                  <Link to="/admin/promotions" className="bg-white p-6 rounded-3xl shadow-sm border border-water-100 hover:border-water-300 transition-all group flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="bg-water-50 p-3 rounded-2xl group-hover:bg-water-900 group-hover:text-white transition-colors"><Gift className="w-5 h-5" /></div>
+                      <span className="font-medium text-water-900">Promociones</span>
                     </div>
                     <ChevronRight className="w-5 h-5 text-water-200" />
                   </Link>

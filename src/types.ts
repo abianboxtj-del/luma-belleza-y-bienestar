@@ -35,16 +35,31 @@ export interface Appointment {
   status: AppointmentStatus;
   notes?: string;
   created_at: string;
+  // Promo aplicada al reservar (si hubo). Los precios quedan "congelados" en el
+  // turno para que el admin vea exactamente qué se cobró, aunque la promo cambie
+  // o se borre después.
+  promotion_id?: string | null;
+  original_price?: number | null;
+  discount_amount?: number | null;
+  final_price?: number | null;
   service_name?: string;
   professional_name?: string;
+  promotion_title?: string;
 }
+
+// Cómo se calcula el descuento de una promo: porcentaje del precio o monto fijo.
+export type DiscountType = "percent" | "fixed";
 
 export interface Promotion {
   id: string;
   title: string;
   description: string;
-  discount: string;
+  discount: string; // etiqueta legible derivada (ej: "20% OFF"), para mostrar.
+  discount_type: DiscountType;
+  discount_value: number;
   active: boolean;
+  // IDs de servicios a los que aplica (hidratado desde promotion_services).
+  service_ids?: string[];
 }
 
 // Roles que acepta la DB. 'owner' (dueño) = gestión total; 'admin' = empleado
