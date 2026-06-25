@@ -25,8 +25,9 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { Service, Appointment, Promotion, Category, Professional } from '@/types';
+import { Service, Appointment, Promotion, Category, Professional, BusinessHour } from '@/types';
 import { bestPromoForService, formatPromoLabel } from '@/lib/pricing';
+import { isDayOpen, slotsForDate } from '@/lib/schedule';
 import toast from 'react-hot-toast';
 
 export default function Home() {
@@ -35,6 +36,7 @@ export default function Home() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [businessHours, setBusinessHours] = useState<BusinessHour[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [date, setDate] = useState<Date | undefined>(startOfToday());
   const [bookingStep, setBookingStep] = useState(1);
@@ -70,12 +72,13 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
-      const [cats, servs, promos, profs, apps] = await Promise.all([
+      const [cats, servs, promos, profs, apps, hours] = await Promise.all([
         supabase.from('categories').select('*').order('order'),
         supabase.from('services').select('*'),
         supabase.from('promotions').select('*, promotion_services(service_id)').eq('active', true),
         supabase.from('professionals').select('*'),
-        supabase.from('appointments').select('*').eq('status', 'approved')
+        supabase.from('appointments').select('*').eq('status', 'approved'),
+        supabase.from('business_hours').select('*')
       ]);
 
       if (cats.data) {
@@ -89,10 +92,21 @@ export default function Home() {
       })));
       if (profs.data) setProfessionals(profs.data);
       if (apps.data) setAppointments(apps.data);
+      if (hours.data) setBusinessHours(hours.data);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
   };
+
+  // Si cambia el día (o su configuración) y el horario elegido ya no está
+  // disponible en ese día, lo limpiamos para no enviar un turno fuera de rango.
+  useEffect(() => {
+    if (!bookingData.time) return;
+    const available = date ? slotsForDate(businessHours, date) : [];
+    if (!available.includes(bookingData.time)) {
+      setBookingData(prev => ({ ...prev, time: '' }));
+    }
+  }, [date, businessHours]);
 
   const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,7 +190,8 @@ export default function Home() {
     return appointments.some(app => app.date === dateStr && app.time === time);
   };
 
-  const timeSlots = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
+  // Horarios reservables según la configuración del día elegido (business_hours).
+  const timeSlots = date ? slotsForDate(businessHours, date) : [];
 
   return (
     <div className="overflow-x-hidden relative">
@@ -398,7 +413,7 @@ export default function Home() {
                           selected={date}
                           onSelect={setDate}
                           className="rounded-3xl border border-water-100 shadow-sm p-4"
-                          disabled={(date) => date < startOfToday() || date.getDay() === 0}
+                          disabled={(date) => date < startOfToday() || !isDayOpen(businessHours, date)}
                           locale={es}
                         />
                       </div>
@@ -469,19 +484,25 @@ export default function Home() {
                               <SelectValue placeholder="Selecciona horario" />
                             </SelectTrigger>
                             <SelectContent position="popper" side="bottom" sideOffset={25} className="rounded-2xl shadow-2xl border-water-50 bg-white/95 backdrop-blur-md z-[100]">
-                              {timeSlots.map(t => {
-                                const occupied = isTimeOccupied(t);
-                                return (
-                                  <SelectItem 
-                                    key={t} 
-                                    value={t} 
-                                    disabled={occupied}
-                                    className={`py-3 px-6 focus:bg-water-50 rounded-xl ${occupied ? 'opacity-50 line-through' : ''}`}
-                                  >
-                                    {t} hs {occupied ? '(Ocupado)' : ''}
-                                  </SelectItem>
-                                );
-                              })}
+                              {timeSlots.length === 0 ? (
+                                <div className="py-3 px-6 text-sm text-stone-400 italic">
+                                  No hay horarios disponibles este día
+                                </div>
+                              ) : (
+                                timeSlots.map(t => {
+                                  const occupied = isTimeOccupied(t);
+                                  return (
+                                    <SelectItem
+                                      key={t}
+                                      value={t}
+                                      disabled={occupied}
+                                      className={`py-3 px-6 focus:bg-water-50 rounded-xl ${occupied ? 'opacity-50 line-through' : ''}`}
+                                    >
+                                      {t} hs {occupied ? '(Ocupado)' : ''}
+                                    </SelectItem>
+                                  );
+                                })
+                              )}
                             </SelectContent>
                           </Select>
                         </div>

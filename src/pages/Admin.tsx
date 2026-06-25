@@ -276,6 +276,13 @@ export default function Admin() {
                   </Link>
                 </>
               )}
+              <Link to="/admin/schedule" className="bg-white p-6 rounded-3xl shadow-sm border border-water-100 hover:border-water-300 transition-all group flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="bg-water-50 p-3 rounded-2xl group-hover:bg-water-900 group-hover:text-white transition-colors"><Clock className="w-5 h-5" /></div>
+                  <span className="font-medium text-water-900">Horarios de Atención</span>
+                </div>
+                <ChevronRight className="w-5 h-5 text-water-200" />
+              </Link>
               <Link to="/admin/appointments" className="bg-white p-6 rounded-3xl shadow-sm border border-water-100 hover:border-water-300 transition-all group flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="bg-water-50 p-3 rounded-2xl group-hover:bg-water-900 group-hover:text-white transition-colors"><Calendar className="w-5 h-5" /></div>

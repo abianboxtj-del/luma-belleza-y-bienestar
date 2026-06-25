@@ -10,6 +10,7 @@ import AdminAppointments from './pages/AdminAppointments';
 import AdminPromotions from './pages/AdminPromotions';
 import AdminCategories from './pages/AdminCategories';
 import AdminProfessionals from './pages/AdminProfessionals';
+import AdminSchedule from './pages/AdminSchedule';
 import AdminUsers from './pages/AdminUsers';
 import Login from './pages/Login';
 import Navbar from './components/Navbar';
@@ -69,8 +70,16 @@ export default function App() {
                     </ProtectedRoute>
                   } 
                 />
-                <Route 
-                  path="/admin/services" 
+                <Route
+                  path="/admin/schedule"
+                  element={
+                    <ProtectedRoute>
+                      <AdminSchedule />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/services"
                   element={
                     <ProtectedRoute requireOwner>
                       <AdminServices />

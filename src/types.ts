@@ -21,6 +21,17 @@ export interface Professional {
   avatar_url?: string;
 }
 
+// Horario de atención por día de la semana. weekday sigue la convención de
+// JS Date.getDay(): 0=domingo, 1=lunes, ... 6=sábado. Si is_open es false, ese
+// día no se puede reservar; si es true, los turnos van de open_time a close_time
+// (formato "HH:MM").
+export interface BusinessHour {
+  weekday: number;
+  is_open: boolean;
+  open_time: string;
+  close_time: string;
+}
+
 export type AppointmentStatus = "pending" | "approved" | "cancelled";
 
 export interface Appointment {
