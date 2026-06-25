@@ -27,7 +27,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { Service, Appointment, Promotion, Category, Professional, BusinessHour } from '@/types';
 import { bestPromoForService, formatPromoLabel } from '@/lib/pricing';
-import { isDayOpen, slotsForDate } from '@/lib/schedule';
+import { isDayOpen, slotsForDate, WEEKDAY_SHORT, WEEKDAY_DISPLAY_ORDER } from '@/lib/schedule';
 import toast from 'react-hot-toast';
 
 export default function Home() {
@@ -120,7 +120,7 @@ export default function Home() {
     // Congelamos el precio aplicado al momento de reservar. Si hay promo, se
     // guardan los tres montos; si no, original = final = precio del servicio.
     const service = services.find(s => s.id === bookingData.service_id);
-    const promo = bestPromoForService(promotions, service);
+    const promo = bestPromoForService(promotions, service, date.getDay());
     const basePrice = service?.price ?? null;
 
     try {
@@ -159,7 +159,9 @@ export default function Home() {
 
   // Promo que se aplica al servicio elegido en la reserva (la de mayor descuento).
   const selectedBookingService = services.find(s => s.id === bookingData.service_id);
-  const appliedPromo = bestPromoForService(promotions, selectedBookingService);
+  // El día elegido importa: una promo limitada a ciertos días solo se aplica si la
+  // fecha cae en uno de ellos.
+  const appliedPromo = bestPromoForService(promotions, selectedBookingService, date ? date.getDay() : undefined);
 
   // "Quiero esta promo": baja al formulario y precarga el servicio. Si la promo
   // cubre uno solo, lo deja elegido; si cubre varios, deja la categoría lista.
@@ -628,6 +630,11 @@ export default function Home() {
                 </div>
                 <h3 className="text-3xl font-serif mb-6">{promo.title}</h3>
                 <p className="text-water-100 text-lg mb-6 leading-relaxed">{promo.description}</p>
+                {(promo.weekdays?.length ?? 0) > 0 && (
+                  <p className="text-xs uppercase tracking-widest text-water-300 mb-6 -mt-2">
+                    Válida: {WEEKDAY_DISPLAY_ORDER.filter(wd => promo.weekdays!.includes(wd)).map(wd => WEEKDAY_SHORT[wd]).join(' · ')}
+                  </p>
+                )}
                 {(promo.service_ids ?? []).length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-8">
                     {(promo.service_ids ?? []).map(id => {

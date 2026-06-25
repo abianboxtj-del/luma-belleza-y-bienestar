@@ -11,6 +11,9 @@ export const WEEKDAY_NAMES = [
   'Sábado',
 ] as const;
 
+// Etiquetas cortas por índice de Date.getDay() (para chips compactos).
+export const WEEKDAY_SHORT = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'] as const;
+
 // Orden de visualización en el panel: lunes primero, domingo al final.
 export const WEEKDAY_DISPLAY_ORDER = [1, 2, 3, 4, 5, 6, 0] as const;
 

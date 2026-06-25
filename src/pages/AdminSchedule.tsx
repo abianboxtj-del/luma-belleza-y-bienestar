@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { BusinessHour } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
 import { Link } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { WEEKDAY_NAMES, WEEKDAY_DISPLAY_ORDER, generateHourlySlots } from '@/lib/schedule';
@@ -115,10 +114,22 @@ export default function AdminSchedule() {
                   >
                     <div className="flex flex-col md:flex-row md:items-center gap-6">
                       <div className="flex items-center gap-3 md:w-48">
-                        <Switch
-                          checked={day.is_open}
-                          onCheckedChange={(checked: boolean) => updateDay(day.weekday, { is_open: checked })}
-                        />
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={day.is_open}
+                          aria-label={`${day.is_open ? 'Cerrar' : 'Abrir'} ${WEEKDAY_NAMES[day.weekday]}`}
+                          onClick={() => updateDay(day.weekday, { is_open: !day.is_open })}
+                          className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-water-400 ${
+                            day.is_open ? 'bg-water-600' : 'bg-stone-300'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                              day.is_open ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
                         <span className="font-serif text-xl text-water-900">{WEEKDAY_NAMES[day.weekday]}</span>
                       </div>
 

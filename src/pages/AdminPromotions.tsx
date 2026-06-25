@@ -3,6 +3,7 @@ import { Plus, Pencil, Trash2, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Promotion, Service, DiscountType } from '@/types';
 import { formatPromoLabel } from '@/lib/pricing';
+import { WEEKDAY_SHORT, WEEKDAY_DISPLAY_ORDER } from '@/lib/schedule';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,6 +31,8 @@ interface PromoForm {
   discount_type: DiscountType;
   discount_value: number;
   active: boolean;
+  auto_apply: boolean;
+  weekdays: number[];
   service_ids: string[];
 }
 
@@ -39,6 +42,8 @@ const EMPTY_FORM: PromoForm = {
   discount_type: 'percent',
   discount_value: 0,
   active: true,
+  auto_apply: true,
+  weekdays: [],
   service_ids: []
 };
 
@@ -89,8 +94,10 @@ export default function AdminPromotions() {
       toast.error('El descuento debe ser mayor a 0');
       return;
     }
-    if (formData.service_ids.length === 0) {
-      toast.error('Elegí al menos un servicio para la promo');
+    // Las automáticas necesitan servicios para saber a qué turno descontar. Las
+    // manuales/informativas pueden no tener (se publican sin auto-aplicarse).
+    if (formData.auto_apply && formData.service_ids.length === 0) {
+      toast.error('Elegí al menos un servicio para la promo automática');
       return;
     }
 
@@ -100,7 +107,10 @@ export default function AdminPromotions() {
       discount_type: formData.discount_type,
       discount_value: formData.discount_value,
       discount: formatPromoLabel(formData.discount_type, formData.discount_value),
-      active: formData.active
+      active: formData.active,
+      auto_apply: formData.auto_apply,
+      // Vacío => null = todos los días.
+      weekdays: formData.weekdays.length > 0 ? formData.weekdays : null
     };
 
     try {
@@ -159,6 +169,8 @@ export default function AdminPromotions() {
       discount_type: promo.discount_type,
       discount_value: promo.discount_value,
       active: promo.active,
+      auto_apply: promo.auto_apply ?? true,
+      weekdays: promo.weekdays ?? [],
       service_ids: promo.service_ids ?? []
     });
     setIsDialogOpen(true);
@@ -170,6 +182,15 @@ export default function AdminPromotions() {
       service_ids: prev.service_ids.includes(serviceId)
         ? prev.service_ids.filter(id => id !== serviceId)
         : [...prev.service_ids, serviceId]
+    }));
+  };
+
+  const toggleWeekday = (weekday: number) => {
+    setFormData(prev => ({
+      ...prev,
+      weekdays: prev.weekdays.includes(weekday)
+        ? prev.weekdays.filter(d => d !== weekday)
+        : [...prev.weekdays, weekday]
     }));
   };
 
@@ -277,6 +298,46 @@ export default function AdminPromotions() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label className="text-water-700">Días válidos</Label>
+                  <p className="text-xs text-stone-400">Si no marcás ninguno, la promo vale todos los días.</p>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {WEEKDAY_DISPLAY_ORDER.map(wd => {
+                      const selected = formData.weekdays.includes(wd);
+                      return (
+                        <button
+                          type="button"
+                          key={wd}
+                          onClick={() => toggleWeekday(wd)}
+                          className={`px-3.5 py-2 rounded-full text-sm font-medium transition-all border ${
+                            selected
+                              ? 'bg-water-900 text-white border-water-900 shadow-sm'
+                              : 'bg-white text-water-700 border-water-100 hover:bg-water-50'
+                          }`}
+                        >
+                          {WEEKDAY_SHORT[wd]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="space-y-3 p-4 bg-water-50 rounded-2xl border border-water-100">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="auto_apply" className="cursor-pointer text-water-800">Aplicación automática</Label>
+                    <Switch
+                      id="auto_apply"
+                      checked={formData.auto_apply}
+                      onCheckedChange={(v) => setFormData({ ...formData, auto_apply: v })}
+                    />
+                  </div>
+                  <p className="text-xs text-stone-500">
+                    {formData.auto_apply
+                      ? 'Se descuenta sola al reservar los servicios marcados.'
+                      : 'Manual/informativa: se publica como promo pero no se descuenta sola (ej. jubilados, estudiantes). El ajuste lo coordina el staff.'}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="description" className="text-water-700">Descripción</Label>
                   <Textarea
                     id="description"
@@ -337,7 +398,11 @@ export default function AdminPromotions() {
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {(promo.service_ids ?? []).length === 0 ? (
-                    <span className="text-xs text-amber-600 italic">Sin servicios asignados — no aplica al reservar.</span>
+                    promo.auto_apply === false ? (
+                      <span className="text-xs bg-water-50 text-water-700 px-2.5 py-1 rounded-full">Todos los servicios</span>
+                    ) : (
+                      <span className="text-xs text-amber-600 italic">Sin servicios asignados — no aplica al reservar.</span>
+                    )
                   ) : (
                     (promo.service_ids ?? []).map(id => (
                       <span key={id} className="text-xs bg-water-50 text-water-700 px-2.5 py-1 rounded-full">
@@ -345,6 +410,19 @@ export default function AdminPromotions() {
                       </span>
                     ))
                   )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                    promo.auto_apply === false ? 'bg-amber-50 text-amber-700' : 'bg-water-100 text-water-700'
+                  }`}>
+                    {promo.auto_apply === false ? 'Manual' : 'Automática'}
+                  </span>
+                  <span className="text-xs text-stone-500">
+                    {promo.weekdays && promo.weekdays.length > 0
+                      ? WEEKDAY_DISPLAY_ORDER.filter(wd => promo.weekdays!.includes(wd)).map(wd => WEEKDAY_SHORT[wd]).join(' · ')
+                      : 'Todos los días'}
+                  </span>
                 </div>
               </div>
 

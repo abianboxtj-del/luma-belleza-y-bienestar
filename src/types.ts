@@ -69,6 +69,12 @@ export interface Promotion {
   discount_type: DiscountType;
   discount_value: number;
   active: boolean;
+  // Días (Date.getDay(): 0=domingo ... 6=sábado) en los que vale la promo.
+  // null/undefined o vacío = todos los días.
+  weekdays?: number[] | null;
+  // true = automática (se descuenta sola al reservar). false = manual/informativa
+  // (se publica pero no se auto-aplica; el staff la ajusta). Default true.
+  auto_apply: boolean;
   // IDs de servicios a los que aplica (hidratado desde promotion_services).
   service_ids?: string[];
 }

@@ -28,6 +28,13 @@ export function promoAppliesToService(promo: Promotion, serviceId: string): bool
   return Array.isArray(promo.service_ids) && promo.service_ids.includes(serviceId);
 }
 
+// ¿La promo es válida el día de la semana dado? (Date.getDay(): 0=domingo..6=sábado).
+// Sin restricción de días (null/undefined o vacío) => vale cualquier día.
+export function promoAppliesToWeekday(promo: Promotion, weekday: number): boolean {
+  if (!Array.isArray(promo.weekdays) || promo.weekdays.length === 0) return true;
+  return promo.weekdays.includes(weekday);
+}
+
 export interface PricedPromo {
   promotion: Promotion;
   originalPrice: number;
@@ -36,13 +43,19 @@ export interface PricedPromo {
 }
 
 /**
- * Mejor promo activa aplicable a un servicio (la que más descuenta). Devuelve
- * `null` si el servicio no tiene precio cargado o ninguna promo aplica, en cuyo
- * caso la reserva sigue su curso normal sin descuento.
+ * Mejor promo aplicable automáticamente a un servicio (la que más descuenta).
+ * Solo considera promos automáticas (`auto_apply`), activas, que cubran el
+ * servicio y —si se pasa `weekday`— válidas ese día de la semana. Las promos
+ * manuales/informativas nunca se auto-aplican acá. Devuelve `null` si el servicio
+ * no tiene precio o ninguna promo aplica, y la reserva sigue sin descuento.
+ *
+ * @param weekday Día elegido (Date.getDay(): 0=domingo..6=sábado). Si se omite,
+ *                no se filtra por día.
  */
 export function bestPromoForService(
   promos: Promotion[],
-  service: Service | undefined
+  service: Service | undefined,
+  weekday?: number
 ): PricedPromo | null {
   if (!service || service.price == null) return null;
   const price = service.price;
@@ -50,7 +63,9 @@ export function bestPromoForService(
   let best: PricedPromo | null = null;
   for (const promo of promos) {
     if (!promo.active) continue;
+    if (promo.auto_apply === false) continue;
     if (!promoAppliesToService(promo, service.id)) continue;
+    if (weekday != null && !promoAppliesToWeekday(promo, weekday)) continue;
 
     const discountAmount = computeDiscountAmount(price, promo.discount_type, promo.discount_value);
     if (discountAmount <= 0) continue;
