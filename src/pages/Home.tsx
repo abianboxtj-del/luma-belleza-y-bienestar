@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { 
   Sparkles, 
@@ -55,6 +55,28 @@ export default function Home() {
 
   const LOGO_URL = "/logo-luma.png";
   const HERO_IMAGE = "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&q=80&w=2000";
+
+  const heroBubbles = useMemo(
+    () => Array.from({ length: 20 }, () => ({
+      size: Math.random() * 40 + 10,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      animationDuration: `${Math.random() * 12 + 8}s`,
+      animationDelay: `${Math.random() * 5}s`
+    })),
+    []
+  );
+
+  const serviceBubbles = useMemo(
+    () => Array.from({ length: 15 }, () => ({
+      size: Math.random() * 40 + 20,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      animationDuration: `${Math.random() * 8 + 6}s`,
+      animationDelay: `${Math.random() * 4}s`
+    })),
+    []
+  );
 
   useEffect(() => {
     fetchData();
@@ -223,23 +245,20 @@ export default function Home() {
     <div className="overflow-x-hidden relative">
       {/* Decoración de burbujas flotantes (Global) */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        {[...Array(20)].map((_, i) => {
-          const size = Math.random() * 40 + 10;
-          return (
-            <div 
-              key={i}
-              className="bubble bg-water-200/40"
-              style={{
-                width: `${size}px`,
-                height: `${size}px`,
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDuration: `${Math.random() * 12 + 8}s`,
-                animationDelay: `${Math.random() * 5}s`
-              }}
-            />
-          );
-        })}
+        {heroBubbles.map((bubble, i) => (
+          <div
+            key={i}
+            className="bubble bg-water-200/40"
+            style={{
+              width: `${bubble.size}px`,
+              height: `${bubble.size}px`,
+              left: bubble.left,
+              top: bubble.top,
+              animationDuration: bubble.animationDuration,
+              animationDelay: bubble.animationDelay
+            }}
+          />
+        ))}
       </div>
 
       {/* Hero Section */}
@@ -291,23 +310,20 @@ export default function Home() {
       {/* Services Section */}
       <section id="servicios" className="py-32 bg-water-50/50 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {[...Array(15)].map((_, i) => {
-            const size = Math.random() * 40 + 20;
-            return (
-              <div 
-                key={`service-bubble-${i}`}
-                className="bubble bg-water-500/40"
-                style={{
-                  width: `${size}px`,
-                  height: `${size}px`,
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  animationDuration: `${Math.random() * 8 + 6}s`,
-                  animationDelay: `${Math.random() * 4}s`
-                }}
-              />
-            );
-          })}
+          {serviceBubbles.map((bubble, i) => (
+            <div
+              key={`service-bubble-${i}`}
+              className="bubble bg-water-500/40"
+              style={{
+                width: `${bubble.size}px`,
+                height: `${bubble.size}px`,
+                left: bubble.left,
+                top: bubble.top,
+                animationDuration: bubble.animationDuration,
+                animationDelay: bubble.animationDelay
+              }}
+            />
+          ))}
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
