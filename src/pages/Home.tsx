@@ -40,6 +40,7 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [date, setDate] = useState<Date | undefined>(startOfToday());
   const [bookingStep, setBookingStep] = useState(1);
+  const [expandedServiceId, setExpandedServiceId] = useState<string | null>(null);
   const [bookingData, setBookingData] = useState({
     category_id: '',
     service_id: '',
@@ -152,6 +153,12 @@ export default function Home() {
   const filteredServices = services.filter(s => s.category_id === selectedCategory);
   const bookingServices = services.filter(s => s.category_id === bookingData.category_id);
   const selectedCategoryName = categories.find(c => c.id === selectedCategory)?.name;
+
+  const isDescriptionLong = (description?: string) => (description?.trim().length ?? 0) > 140;
+
+  const toggleServiceDescription = (serviceId: string) => {
+    setExpandedServiceId((current) => (current === serviceId ? null : serviceId));
+  };
   
   const professionalsOfCategory = professionals.filter(p =>
     p.specialties.includes(selectedCategoryName || '')
@@ -344,16 +351,31 @@ export default function Home() {
                       </div>
                     </div>
                     <h3 className="text-2xl font-serif text-water-900 mb-4 group-hover:text-water-600 transition-colors">{service.name}</h3>
-                    <p className="text-stone-500 text-sm mb-8 leading-relaxed line-clamp-3">
-                      {service.description || 'Un tratamiento diseñado exclusivamente para tu bienestar y relajación total.'}
-                    </p>
+                    <div
+                      className={`text-stone-500 text-sm leading-relaxed overflow-hidden transition-[max-height,opacity] duration-300 ${
+                        expandedServiceId === service.id ? 'max-h-48 opacity-100' : 'max-h-16 opacity-90'
+                      }`}
+                    >
+                      <p className={expandedServiceId === service.id ? '' : 'line-clamp-3'}>
+                        {service.description || 'Un tratamiento diseñado exclusivamente para tu bienestar y relajación total.'}
+                      </p>
+                    </div>
+                    {isDescriptionLong(service.description) && (
+                      <button
+                        type="button"
+                        onClick={() => toggleServiceDescription(service.id)}
+                        className="mt-3 text-water-700 font-semibold text-sm hover:text-water-900 transition-colors"
+                      >
+                        {expandedServiceId === service.id ? 'Leer menos.' : 'Leer más.'}
+                      </button>
+                    )}
                     <button 
                       onClick={() => {
                         setBookingData({ ...bookingData, category_id: service.category_id, service_id: service.id });
                         setBookingStep(1);
                         document.getElementById('turnos')?.scrollIntoView({ behavior: 'smooth' });
                       }}
-                      className="text-water-900 font-bold text-sm flex items-center gap-2 hover:gap-4 transition-all group/btn"
+                      className="mt-8 text-water-900 font-bold text-sm flex items-center gap-2 hover:gap-4 transition-all group/btn"
                     >
                       Reservar ahora <ChevronRight className="w-5 h-5 transition-transform group-hover/btn:translate-x-1" />
                     </button>
