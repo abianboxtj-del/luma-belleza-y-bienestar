@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Calendar, 
-  Sparkles, 
-  Clock, 
-  CheckCircle, 
+import {
+  Calendar,
+  Sparkles,
+  Clock,
+  CheckCircle,
   ChevronRight,
   Tag,
   Gift,
@@ -181,13 +181,13 @@ export default function Admin() {
                           <span className="flex items-center gap-1"><Sparkles className="w-4 h-4 text-water-400" /> {app.service_name}</span>
                           <span className="flex items-center gap-1"><Calendar className="w-4 h-4 text-water-400" /> {format(new Date(app.date + 'T12:00:00'), "d 'de' MMMM", { locale: es })}</span>
                           <span className="flex items-center gap-1"><Clock className="w-4 h-4 text-water-400" /> {app.time} hs</span>
+                          <span className="flex items-center gap-1"><Phone className="w-4 h-4 text-water-400" /> {app.client_phone}</span>
                           {app.final_price != null && (
                             <span className="flex items-center gap-1 font-medium text-water-700">
                               ${app.final_price}
                               {app.discount_amount ? <span className="text-stone-400 line-through ml-1">${app.original_price}</span> : null}
                             </span>
                           )}
-                          <span className="flex items-center gap-1"><Phone className="w-4 h-4 text-water-400" /> {app.client_phone}</span>
                         </div>
                         {app.promotion_title && (
                           <div className="mt-2">
