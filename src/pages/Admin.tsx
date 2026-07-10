@@ -9,7 +9,8 @@ import {
   Tag,
   Gift,
   User,
-  Users
+  Users,
+  Phone
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Appointment, Service, Professional } from '@/types';
@@ -186,6 +187,7 @@ export default function Admin() {
                               {app.discount_amount ? <span className="text-stone-400 line-through ml-1">${app.original_price}</span> : null}
                             </span>
                           )}
+                          <span className="flex items-center gap-1"><Phone className="w-4 h-4 text-water-400" /> {app.phone}</span>
                         </div>
                         {app.promotion_title && (
                           <div className="mt-2">
