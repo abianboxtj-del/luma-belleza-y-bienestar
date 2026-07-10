@@ -154,7 +154,10 @@ export default function Home() {
   const bookingServices = services.filter(s => s.category_id === bookingData.category_id);
   const selectedCategoryName = categories.find(c => c.id === selectedCategory)?.name;
 
-  const isDescriptionLong = (description?: string) => (description?.trim().length ?? 0) > 140;
+  const isDescriptionLong = (description?: string) => {
+    const trimmed = description?.trim() ?? '';
+    return trimmed.length > 100 || trimmed.split(/\s+/).length > 18;
+  };
 
   const toggleServiceDescription = (serviceId: string) => {
     setExpandedServiceId((current) => (current === serviceId ? null : serviceId));
