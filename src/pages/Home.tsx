@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { 
   Sparkles, 
@@ -41,6 +41,8 @@ export default function Home() {
   const [date, setDate] = useState<Date | undefined>(startOfToday());
   const [bookingStep, setBookingStep] = useState(1);
   const [expandedServiceId, setExpandedServiceId] = useState<string | null>(null);
+  const [descriptionOverflow, setDescriptionOverflow] = useState<Record<string, boolean>>({});
+  const descriptionRefs = useRef<Record<string, HTMLParagraphElement | null>>({});
   const [bookingData, setBookingData] = useState({
     category_id: '',
     service_id: '',
@@ -154,10 +156,22 @@ export default function Home() {
   const bookingServices = services.filter(s => s.category_id === bookingData.category_id);
   const selectedCategoryName = categories.find(c => c.id === selectedCategory)?.name;
 
-  const isDescriptionLong = (description?: string) => {
-    const trimmed = description?.trim() ?? '';
-    return trimmed.length > 100 || trimmed.split(/\s+/).length > 18;
+  const updateDescriptionOverflow = () => {
+    const overflowMap: Record<string, boolean> = {};
+    Object.entries(descriptionRefs.current).forEach(([id, element]) => {
+      if (!element) return;
+      const computed = window.getComputedStyle(element);
+      const lineHeight = parseFloat(computed.lineHeight) || parseFloat(computed.fontSize) * 1.5;
+      overflowMap[id] = element.scrollHeight > lineHeight * 3 + 1;
+    });
+    setDescriptionOverflow(overflowMap);
   };
+
+  useEffect(() => {
+    updateDescriptionOverflow();
+    window.addEventListener('resize', updateDescriptionOverflow);
+    return () => window.removeEventListener('resize', updateDescriptionOverflow);
+  }, [filteredServices, services, selectedCategory]);
 
   const toggleServiceDescription = (serviceId: string) => {
     setExpandedServiceId((current) => (current === serviceId ? null : serviceId));
@@ -359,11 +373,16 @@ export default function Home() {
                         expandedServiceId === service.id ? 'max-h-48 opacity-100' : 'max-h-16 opacity-90'
                       }`}
                     >
-                      <p className={expandedServiceId === service.id ? '' : 'line-clamp-3'}>
+                      <p
+                        ref={(node) => {
+                          if (node) descriptionRefs.current[service.id] = node;
+                        }}
+                        className={expandedServiceId === service.id ? '' : 'line-clamp-3'}
+                      >
                         {service.description || 'Un tratamiento diseñado exclusivamente para tu bienestar y relajación total.'}
                       </p>
                     </div>
-                    {isDescriptionLong(service.description) && (
+                    {service.description && descriptionOverflow[service.id] && (
                       <button
                         type="button"
                         onClick={() => toggleServiceDescription(service.id)}
