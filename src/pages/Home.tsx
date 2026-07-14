@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { 
@@ -11,8 +11,6 @@ import {
   DollarSign
 } from 'lucide-react';
 import { format, startOfToday } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -79,24 +77,7 @@ export default function Home() {
     []
   );
 
-  useEffect(() => {
-    fetchData();
-
-    // Auto-recuperación: al volver a la pestaña, recargamos los datos por si
-    // una consulta anterior falló o quedó vacía (en vez de tener que recargar
-    // la página a mano).
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') fetchData();
-    };
-    document.addEventListener('visibilitychange', onVisible);
-    window.addEventListener('focus', onVisible);
-    return () => {
-      document.removeEventListener('visibilitychange', onVisible);
-      window.removeEventListener('focus', onVisible);
-    };
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [cats, servs, promos, profs, apps, hours] = await Promise.all([
         supabase.from('categories').select('*').order('order'),
@@ -122,7 +103,24 @@ export default function Home() {
     } catch (error) {
       console.error("Error fetching data:", error);
     }
-  };
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    fetchData();
+
+    // Auto-recuperación: al volver a la pestaña, recargamos los datos por si
+    // una consulta anterior falló o quedó vacía (en vez de tener que recargar
+    // la página a mano).
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') fetchData();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onVisible);
+    };
+  }, [fetchData]);
 
   // Si cambia el día (o su configuración) y el horario elegido ya no está
   // disponible en ese día, lo limpiamos para no enviar un turno fuera de rango.
@@ -471,14 +469,26 @@ export default function Home() {
                     <h3 className="text-3xl font-serif mb-10 text-water-900">Paso 1: Elige fecha y servicio</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                       <div className="space-y-4">
-                        <Calendar
-                          mode="single"
-                          selected={date}
-                          onSelect={setDate}
-                          className="rounded-3xl border border-water-100 shadow-sm p-4"
-                          disabled={(date) => date < startOfToday() || !isDayOpen(businessHours, date)}
-                          locale={es}
-                        />
+                        <div className="rounded-3xl border border-water-100 shadow-sm p-4 bg-white">
+                          <Label className="text-water-700 font-semibold ml-1">Fecha</Label>
+                          <Input
+                            type="date"
+                            min={format(startOfToday(), 'yyyy-MM-dd')}
+                            value={date ? format(date, 'yyyy-MM-dd') : ''}
+                            onChange={(e) => {
+                              const nextDate = e.target.value ? new Date(`${e.target.value}T12:00:00`) : undefined;
+                              if (nextDate && isDayOpen(businessHours, nextDate)) {
+                                setDate(nextDate);
+                              } else if (!nextDate) {
+                                setDate(undefined);
+                              }
+                            }}
+                            className="rounded-2xl border-water-100 h-14 px-6 mt-3"
+                          />
+                          <p className="text-sm text-stone-500 mt-3">
+                            Solo se muestran días con horario habilitado.
+                          </p>
+                        </div>
                       </div>
                       <div className="space-y-8">
                         <div className="space-y-3">

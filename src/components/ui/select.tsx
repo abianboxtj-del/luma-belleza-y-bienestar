@@ -46,8 +46,8 @@ function SelectTrigger({
       {...props}
     >
       {children}
-      {/* Flecha con animación – usando el atributo oficial de Base UI (data-popup-open en el Trigger) */}
-      <SelectPrimitive.Icon asChild>
+      {/* Flecha con animación – usando el icono directamente para evitar problemas en el render */}
+      <SelectPrimitive.Icon>
         <ChevronDownIcon
           className="pointer-events-none size-4 text-muted-foreground transition-transform duration-200 group-data-[popup-open]:rotate-[180deg]"
         />
