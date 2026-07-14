@@ -19,6 +19,20 @@ export default function Navbar() {
 
   const isAdminPath = location.pathname.startsWith('/admin');
 
+  const handleNavClick = (target: string) => {
+    if (location.pathname !== '/') {
+      window.location.assign(target);
+      return;
+    }
+
+    const id = target.replace('/#', '');
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+    setIsOpen(false);
+  };
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-water-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -35,9 +49,14 @@ export default function Navbar() {
 
           <div className="hidden md:flex items-center space-x-8">
             {!isAdminPath && navLinks.map((link) => (
-              <Link key={link.name} to={link.href} className="text-sm font-medium text-water-700 hover:text-water-900 transition-colors">
+              <button
+                key={link.name}
+                type="button"
+                onClick={() => handleNavClick(link.href)}
+                className="text-sm font-medium text-water-700 hover:text-water-900 transition-colors"
+              >
                 {link.name}
-              </Link>
+              </button>
             ))}
 
             {isAdmin && (
@@ -78,14 +97,14 @@ export default function Navbar() {
         <div className="md:hidden border-t border-water-100 bg-white/95 backdrop-blur-md">
           <div className="px-4 py-4 flex flex-col space-y-1">
             {!isAdminPath && navLinks.map((link) => (
-              <Link
+              <button
                 key={link.name}
-                to={link.href}
-                onClick={() => setIsOpen(false)}
-                className="px-3 py-3 rounded-xl text-base font-medium text-water-700 hover:bg-water-50 hover:text-water-900 transition-colors"
+                type="button"
+                onClick={() => handleNavClick(link.href)}
+                className="px-3 py-3 rounded-xl text-base font-medium text-water-700 hover:bg-water-50 hover:text-water-900 transition-colors text-left"
               >
                 {link.name}
-              </Link>
+              </button>
             ))}
 
             {isAdmin && (

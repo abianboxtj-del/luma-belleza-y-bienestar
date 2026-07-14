@@ -89,8 +89,13 @@ export default function Home() {
       ]);
 
       if (cats.data) {
-        setCategories(cats.data);
-        if (cats.data.length > 0 && !selectedCategory) setSelectedCategory(cats.data[0].id);
+        setCategories((current) => {
+          if (current.length === cats.data!.length && current.every((item, index) => item.id === cats.data![index].id)) {
+            return current;
+          }
+          return cats.data!;
+        });
+        setSelectedCategory((current) => current || cats.data![0]?.id || '');
       }
       if (servs.data) setServices(servs.data);
       if (promos.data) setPromotions(promos.data.map(p => ({
@@ -103,7 +108,7 @@ export default function Home() {
     } catch (error) {
       console.error("Error fetching data:", error);
     }
-  }, [selectedCategory]);
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -192,7 +197,7 @@ export default function Home() {
     updateDescriptionOverflow();
     window.addEventListener('resize', updateDescriptionOverflow);
     return () => window.removeEventListener('resize', updateDescriptionOverflow);
-  }, [filteredServices, services, selectedCategory]);
+  }, [filteredServices.length, services.length, selectedCategory]);
 
   const toggleServiceDescription = (serviceId: string) => {
     setExpandedServiceId((current) => (current === serviceId ? null : serviceId));

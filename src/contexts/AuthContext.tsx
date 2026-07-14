@@ -1,6 +1,5 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useMemo, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '@/types';
 
 interface AuthContextType {
@@ -17,88 +16,14 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let mounted = true;
-
-    // Red de seguridad: si por lo que sea una consulta queda colgada,
-    // nunca dejamos la app atascada en el spinner para siempre.
-    const safety = setTimeout(() => {
-      if (mounted) setLoading(false);
-    }, 8000);
-
-    // Carga inicial de la sesión (lectura local, no dispara el lock).
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
-        setLoading(false);
-      }
-    });
-
-    // IMPORTANTE: el callback NO debe ser async ni await-ear consultas a la DB.
-    // Supabase serializa las operaciones de auth tras un lock interno; consultar
-    // la DB dentro del callback (que ya tiene el lock tomado) lo bloquea para
-    // siempre y cuelga toda la app. Por eso diferimos fetchProfile con setTimeout,
-    // que lo ejecuta fuera del callback, una vez liberado el lock.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!mounted) return;
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        const userId = session.user.id;
-        setTimeout(() => {
-          if (mounted) fetchProfile(userId);
-        }, 0);
-      } else {
-        setProfile(null);
-        setLoading(false);
-      }
-    });
-
-    return () => {
-      mounted = false;
-      clearTimeout(safety);
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  const fetchProfile = async (userId: string) => {
-    // Cortamos la consulta si tarda demasiado, para no colgar el spinner.
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 6000);
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .abortSignal(controller.signal)
-        .maybeSingle();
-
-      if (error) {
-        console.warn('Error fetching profile:', error.message);
-        setProfile(null);
-      } else {
-        setProfile(data as UserProfile);
-      }
-    } catch (error) {
-      console.error('Error in fetchProfile:', error);
-      setProfile(null);
-    } finally {
-      clearTimeout(timeout);
-      setLoading(false);
-    }
-  };
+  const [user] = useState<User | null>(null);
+  const [profile] = useState<UserProfile | null>(null);
+  const [session] = useState<Session | null>(null);
+  const [loading] = useState(false);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    // Se mantiene como no-op para no romper la navegación mientras no haya auth activa.
+    return;
   };
 
   // Dueño = rol 'owner'. Mantenemos el email principal como bootstrap por si su
@@ -109,8 +34,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Cualquiera de los dos tiene acceso al panel de administración.
   const isAdmin = isOwner || isEmployee;
 
+  const value = useMemo(() => ({
+    user,
+    profile,
+    session,
+    loading,
+    isOwner,
+    isEmployee,
+    isAdmin,
+    signOut,
+  }), [user, profile, session, loading, isOwner, isEmployee, isAdmin]);
+
   return (
-    <AuthContext.Provider value={{ user, profile, session, loading, isOwner, isEmployee, isAdmin, signOut }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
