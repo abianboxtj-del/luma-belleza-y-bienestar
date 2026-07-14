@@ -229,6 +229,13 @@ export default function Home() {
     document.getElementById('turnos')?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   const getCategoryName = (id: string) => categories.find(c => c.id === id)?.name || "Selecciona categoría";
   const getServiceName = (id: string) => services.find(s => s.id === id)?.name || "Selecciona servicio";
   const getProfessionalName = (id: string) => {
@@ -298,8 +305,20 @@ export default function Home() {
               “Un espacio pensado para que te regales un momento para vos”
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-              <Link to="/#turnos" className="btn-primary w-full sm:w-auto text-lg px-10 py-4">Reservar Turno</Link>
-              <Link to="/#servicios" className="btn-secondary w-full sm:w-auto text-lg px-10 py-4">Ver Servicios</Link>
+              <button
+                type="button"
+                onClick={() => scrollToSection('turnos')}
+                className="btn-primary w-full sm:w-auto text-lg px-10 py-4"
+              >
+                Reservar Turno
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollToSection('servicios')}
+                className="btn-secondary w-full sm:w-auto text-lg px-10 py-4"
+              >
+                Ver Servicios
+              </button>
             </div>
           </motion.div>
         </div>
