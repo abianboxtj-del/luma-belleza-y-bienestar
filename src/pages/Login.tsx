@@ -38,17 +38,17 @@ export default function Login() {
     setIsSubmitting(true);
 
     try {
-      const { data: { session: nextSession }, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       if (error) throw error;
-      if (nextSession) {
+      if (data.session) {
         toast.success('¡Bienvenido de nuevo!');
-        navigate('/admin', { replace: true });
-      } else {
-        toast.error('No se pudo iniciar la sesión. Intenta de nuevo.');
+        window.location.replace('/admin');
+        return;
       }
+      toast.error('No se pudo iniciar la sesión. Intenta de nuevo.');
     } catch (error: any) {
       toast.error('Credenciales inválidas o acceso no autorizado');
     } finally {

@@ -28,7 +28,6 @@ export default function Footer() {
             <h4 className="text-white font-serif text-lg mb-6">Navegación</h4>
             <ul className="space-y-4 text-sm">
               <li><a href="#inicio" className="hover:text-white transition-colors">Inicio</a></li>
-              <li><a href="#sobre" className="hover:text-white transition-colors">Sobre Lumá</a></li>
               <li><a href="#servicios" className="hover:text-white transition-colors">Servicios</a></li>
               <li><a href="#turnos" className="hover:text-white transition-colors">Turnos</a></li>
             </ul>
