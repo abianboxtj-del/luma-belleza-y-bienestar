@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { 
   Sparkles, 
@@ -294,8 +295,8 @@ export default function Home() {
               “Un espacio pensado para que te regales un momento para vos”
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-              <a href="#turnos" className="btn-primary w-full sm:w-auto text-lg px-10 py-4">Reservar Turno</a>
-              <a href="#servicios" className="btn-secondary w-full sm:w-auto text-lg px-10 py-4">Ver Servicios</a>
+              <Link to="/#turnos" className="btn-primary w-full sm:w-auto text-lg px-10 py-4">Reservar Turno</Link>
+              <Link to="/#servicios" className="btn-secondary w-full sm:w-auto text-lg px-10 py-4">Ver Servicios</Link>
             </div>
           </motion.div>
         </div>

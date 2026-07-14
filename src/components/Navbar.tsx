@@ -35,9 +35,9 @@ export default function Navbar() {
 
           <div className="hidden md:flex items-center space-x-8">
             {!isAdminPath && navLinks.map((link) => (
-              <a key={link.name} href={link.href} className="text-sm font-medium text-water-700 hover:text-water-900 transition-colors">
+              <Link key={link.name} to={link.href} className="text-sm font-medium text-water-700 hover:text-water-900 transition-colors">
                 {link.name}
-              </a>
+              </Link>
             ))}
 
             {isAdmin && (
@@ -78,14 +78,14 @@ export default function Navbar() {
         <div className="md:hidden border-t border-water-100 bg-white/95 backdrop-blur-md">
           <div className="px-4 py-4 flex flex-col space-y-1">
             {!isAdminPath && navLinks.map((link) => (
-              <a
+              <Link
                 key={link.name}
-                href={link.href}
+                to={link.href}
                 onClick={() => setIsOpen(false)}
                 className="px-3 py-3 rounded-xl text-base font-medium text-water-700 hover:bg-water-50 hover:text-water-900 transition-colors"
               >
                 {link.name}
-              </a>
+              </Link>
             ))}
 
             {isAdmin && (
