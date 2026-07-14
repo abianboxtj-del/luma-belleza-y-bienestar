@@ -12,7 +12,6 @@ export default function Navbar() {
 
   const navLinks = [
     { name: 'Inicio', href: '/#inicio' },
-    { name: 'Sobre Lumá', href: '/#sobre' },
     { name: 'Servicios', href: '/#servicios' },
     { name: 'Turnos', href: '/#turnos' },
   ];

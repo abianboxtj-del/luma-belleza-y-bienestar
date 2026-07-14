@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,10 +9,17 @@ import { Mail, Lock, LogIn } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function Login() {
+  const navigate = useNavigate();
   const { session, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (session && !loading) {
+      navigate('/admin', { replace: true });
+    }
+  }, [session, loading, navigate]);
 
   if (loading) {
     return (
@@ -31,12 +38,17 @@ export default function Login() {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: { session: nextSession }, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       if (error) throw error;
-      toast.success('¡Bienvenido de nuevo!');
+      if (nextSession) {
+        toast.success('¡Bienvenido de nuevo!');
+        navigate('/admin', { replace: true });
+      } else {
+        toast.error('No se pudo iniciar la sesión. Intenta de nuevo.');
+      }
     } catch (error: any) {
       toast.error('Credenciales inválidas o acceso no autorizado');
     } finally {

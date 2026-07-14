@@ -46,8 +46,8 @@ function ProtectedRoute({ children, requireOwner = false }: { children: React.Re
 export default function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <Router>
+      <Router>
+        <AuthProvider>
           <div className="min-h-screen flex flex-col">
             <Navbar />
             <main className="flex-grow">

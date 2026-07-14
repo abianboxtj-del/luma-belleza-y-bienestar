@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '@/types';
 
 interface AuthContextType {
@@ -16,14 +17,73 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user] = useState<User | null>(null);
-  const [profile] = useState<UserProfile | null>(null);
-  const [session] = useState<Session | null>(null);
-  const [loading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const applySession = (nextSession: Session | null) => {
+      if (!isMounted) return;
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+
+      if (!nextSession?.user) {
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(false);
+      const userId = nextSession.user.id;
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 6000);
+
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .abortSignal(controller.signal)
+        .maybeSingle()
+        .then(({ data, error }) => {
+          if (!isMounted) return;
+          if (error) {
+            console.warn('Error fetching profile:', error.message);
+            setProfile(null);
+          } else {
+            setProfile(data as UserProfile | null);
+          }
+          setLoading(false);
+        })
+        .catch((error) => {
+          if (!isMounted) return;
+          console.error('Error in fetchProfile:', error);
+          setProfile(null);
+          setLoading(false);
+        })
+        .finally(() => {
+          window.clearTimeout(timeout);
+        });
+    };
+
+    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+      applySession(initialSession);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      applySession(nextSession);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const signOut = async () => {
-    // Se mantiene como no-op para no romper la navegación mientras no haya auth activa.
-    return;
+    await supabase.auth.signOut();
   };
 
   // Dueño = rol 'owner'. Mantenemos el email principal como bootstrap por si su
