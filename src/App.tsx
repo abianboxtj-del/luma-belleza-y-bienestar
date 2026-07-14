@@ -123,8 +123,8 @@ export default function App() {
             <Footer />
           </div>
           <Toaster position="bottom-right" />
-        </Router>
-      </AuthProvider>
+        </AuthProvider>
+      </Router>
     </ErrorBoundary>
   );
 }
