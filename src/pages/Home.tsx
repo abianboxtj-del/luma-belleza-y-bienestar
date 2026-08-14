@@ -184,19 +184,28 @@ const selectedProfessional =
     ? null
     : professionals.find(p => p.id === bookingData.professional_id);
 
-const { error: emailError } = await supabase.functions.invoke('send-booking-email', {
-  body: {
-    client_name: bookingData.client_name,
-    client_email: bookingData.client_email,
-    client_phone: bookingData.client_phone,
-    service_name: service?.name || 'Servicio',
-    professional_name: selectedProfessional?.name || 'Cualquier profesional',
-    date: format(date, 'yyyy-MM-dd'),
-    time: bookingData.time,
-    notes: bookingData.notes,
-    final_price: promo?.finalPrice ?? basePrice
+const emailResponse = await fetch(
+  'https://wtdirkuyeyzozgiozbzbd.supabase.co/functions/v1/send-booking-email',
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      client_name: bookingData.client_name,
+      client_email: bookingData.client_email,
+      client_phone: bookingData.client_phone,
+      service_name: service?.name || 'Servicio',
+      professional_name: selectedProfessional?.name || 'Cualquier profesional',
+      date: format(date, 'yyyy-MM-dd'),
+      time: bookingData.time,
+      notes: bookingData.notes,
+      final_price: promo?.finalPrice ?? basePrice
+    })
   }
-});
+);
+
+const emailError = !emailResponse.ok;
 
 if (emailError) {
   console.error('Error enviando emails:', emailError);
