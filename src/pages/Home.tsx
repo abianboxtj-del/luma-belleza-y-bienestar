@@ -48,6 +48,7 @@ export default function Home() {
     professional_id: 'any',
     time: '',
     client_name: '',
+    client_email: '',
     client_phone: '',
     notes: ''
   });
@@ -159,6 +160,7 @@ export default function Home() {
         date: format(date, 'yyyy-MM-dd'),
         time: bookingData.time,
         client_name: bookingData.client_name,
+        client_email: bookingData.client_email,
         client_phone: bookingData.client_phone,
         notes: bookingData.notes,
         status: 'pending',
@@ -660,6 +662,22 @@ export default function Home() {
                           />
                         </div>
                         <div className="space-y-3">
+                          <div className="space-y-3">
+  <Label htmlFor="email" className="text-water-700 font-semibold ml-1">
+    Email
+  </Label>
+  <Input
+    id="email"
+    type="email"
+    value={bookingData.client_email}
+    onChange={(e) =>
+      setBookingData({ ...bookingData, client_email: e.target.value })
+    }
+    required
+    className="rounded-2xl border-water-100 h-14 px-6"
+    placeholder="Ej: maria@gmail.com"
+  />
+</div>
                           <Label htmlFor="phone" className="text-water-700 font-semibold ml-1">WhatsApp</Label>
                           <Input 
                             id="phone" 
