@@ -140,7 +140,14 @@ export default function Home() {
 
   const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!date || !bookingData.service_id || !bookingData.time || !bookingData.client_name || !bookingData.client_phone) {
+    if (
+  !date ||
+  !bookingData.service_id ||
+  !bookingData.time ||
+  !bookingData.client_name ||
+  !bookingData.client_email ||
+  !bookingData.client_phone
+) {
       toast.error('Por favor completa todos los campos obligatorios');
       return;
     }
