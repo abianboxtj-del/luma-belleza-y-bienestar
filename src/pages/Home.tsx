@@ -171,9 +171,37 @@ export default function Home() {
       });
 
       if (error) throw error;
-      toast.dismiss(loadingToast);
-      toast.success('¡Turno solicitado con éxito!');
-      setBookingStep(3);
+
+const selectedProfessional =
+  bookingData.professional_id === 'any'
+    ? null
+    : professionals.find(p => p.id === bookingData.professional_id);
+
+const { error: emailError } = await supabase.functions.invoke('send-booking-email', {
+  body: {
+    client_name: bookingData.client_name,
+    client_email: bookingData.client_email,
+    client_phone: bookingData.client_phone,
+    service_name: service?.name || 'Servicio',
+    professional_name: selectedProfessional?.name || 'Cualquier profesional',
+    date: format(date, 'yyyy-MM-dd'),
+    time: bookingData.time,
+    notes: bookingData.notes,
+    final_price: promo?.finalPrice ?? basePrice
+  }
+});
+
+if (emailError) {
+  console.error('Error enviando emails:', emailError);
+  toast.dismiss(loadingToast);
+  toast.success('El turno fue guardado, pero hubo un problema enviando el correo.');
+  setBookingStep(3);
+  return;
+}
+
+toast.dismiss(loadingToast);
+toast.success('¡Turno solicitado con éxito!');
+setBookingStep(3);
     } catch (error) {
       toast.dismiss(loadingToast);
       toast.error('Error al solicitar el turno. Intenta de nuevo.');
